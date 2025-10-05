@@ -5956,6 +5956,8 @@ function updateTDDisplay() {
         let wordGameOver = false;
         let wordGrid = [];
         let currentWordCategory = 'general';
+        let currentWordDifficulty = 'medium';
+        let currentWordLength = 5;
         let hintsUsed = 0;
 
         // Enhanced word databases by difficulty and category
@@ -6050,6 +6052,10 @@ function updateTDDisplay() {
             currentRow = 0;
             wordGameOver = false;
             wordGrid = [];
+
+            currentWordCategory = 'general';
+            currentWordDifficulty = 'medium';
+            currentWordLength = 5;
             
             createWordGrid();
             createWordKeyboard();
@@ -6106,8 +6112,8 @@ function updateTDDisplay() {
         }
 
         function getWordList() {
-            const difficulty = currentWordDifficulty;
-            const category = currentWordCategory;
+            const difficulty = currentWordDifficulty || 'medium';
+            const category = currentWordCategory || 'general';
             
             // Update word length and max rows based on difficulty
             switch (difficulty) {
