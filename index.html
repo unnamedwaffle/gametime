@@ -638,31 +638,55 @@
             </div>
         </div>
 
-        <!-- Pong -->
-        <div id="pong-page" class="page hidden">
-            <div class="flex items-center mb-6">
-                <button onclick="showPage('home')" class="text-primary hover:text-primary-dark mr-4">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                    </svg>
-                </button>
-                <h2 class="text-3xl font-bold">🏓 Pong</h2>
-            </div>
+       <!-- Tower Defense -->
+<div id="tower-defense-page" class="page hidden">
+    <div class="flex items-center mb-6">
+        <button onclick="showPage('home')" class="text-primary hover:text-primary-dark mr-4">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+        </button>
+        <h2 class="text-3xl font-bold">🏰 Tower Defense</h2>
+    </div>
 
-            <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-6 mb-6">
-                <h3 class="text-xl font-semibold mb-3">How to Play</h3>
-                <p class="text-gray-600 dark:text-gray-400">Use W/S keys or touch the screen to move your paddle!</p>
-            </div>
+    <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-6 mb-6">
+        <h3 class="text-xl font-semibold mb-3">How to Play</h3>
+        <p class="text-gray-600 dark:text-gray-400">Click empty spaces to build towers and defend against enemy waves! Each tower costs money and has different abilities.</p>
+    </div>
 
-            <div class="text-center">
-                <div class="mb-4">
-                    <span class="text-lg font-semibold">Player: <span id="pong-player-score">0</span></span>
-                    <span class="ml-6 text-lg font-semibold">Computer: <span id="pong-computer-score">0</span></span>
-                </div>
-                <canvas id="pong-canvas" class="game-canvas mx-auto mb-4" width="400" height="300"></canvas>
-                <button onclick="startPong()" class="bg-primary hover:bg-primary-dark text-white px-6 py-2 rounded-lg transition-colors">Start Game</button>
-            </div>
+    <div class="text-center">
+        <div class="mb-4 flex flex-wrap justify-center gap-4">
+            <span class="text-lg font-semibold">💰 Money: <span id="td-money">100</span></span>
+            <span class="text-lg font-semibold">❤️ Lives: <span id="td-lives">20</span></span>
+            <span class="text-lg font-semibold">🌊 Wave: <span id="td-wave">1</span></span>
+            <span class="text-lg font-semibold">📊 Score: <span id="td-score">0</span></span>
         </div>
+        
+        <!-- Tower Selection -->
+        <div class="mb-4 flex flex-wrap justify-center gap-2">
+            <button id="basic-tower-btn" onclick="selectTowerType('basic')" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded transition-colors">
+                🔵 Basic ($20)
+            </button>
+            <button id="heavy-tower-btn" onclick="selectTowerType('heavy')" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded transition-colors">
+                🔴 Heavy ($50)
+            </button>
+            <button id="rapid-tower-btn" onclick="selectTowerType('rapid')" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded transition-colors">
+                🟢 Rapid ($35)
+            </button>
+            <button onclick="sellMode()" class="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded transition-colors">
+                💰 Sell (50%)
+            </button>
+        </div>
+        
+        <canvas id="td-canvas" class="game-canvas mx-auto mb-4 cursor-pointer" width="600" height="400"></canvas>
+        
+        <div class="space-x-4">
+            <button onclick="startTowerDefense()" class="bg-primary hover:bg-primary-dark text-white px-6 py-2 rounded-lg transition-colors">Start Wave</button>
+            <button onclick="resetTowerDefense()" class="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg transition-colors">Reset Game</button>
+        </div>
+        <div id="td-status" class="text-xl font-semibold mt-4"></div>
+    </div>
+</div>
 
         <!-- Dino Runner -->
         <div id="endless-runner-page" class="page hidden">
@@ -1305,7 +1329,7 @@
             
             // Arcade Games (6 total)
             'snake-game': { name: 'Snake Game', category: 'arcade', emoji: '🐍', description: 'Classic snake game - eat food and grow longer!' },
-            'pong': { name: 'Pong', category: 'arcade', emoji: '🏓', description: 'Classic paddle game - first to 5 points wins!' },
+            'tower-defense': { name: 'Tower Defense', category: 'arcade', emoji: '🏰', description: 'Build towers to defend against enemy waves!' },
             'breakout': { name: 'Breakout', category: 'arcade', emoji: '🧱', description: 'Break all the bricks with your paddle and ball!' },
             'endless-runner': { name: 'Dino Runner', category: 'arcade', emoji: '🦖', description: 'Jump over obstacles in this endless running adventure!' },
             'flappy-bird': { name: 'Flappy Bird', category: 'arcade', emoji: '🐦', description: 'Flap through pipes in this challenging flying game!' },
@@ -1372,7 +1396,7 @@
                 
                 // Arcade Games
                 if (gameId === 'snake-game') setupSnakeGame();
-                if (gameId === 'pong') setupPong();
+                if (gameId === 'tower-defense') setupTowerDefense();
                 if (gameId === 'breakout') setupBreakout();
                 if (gameId === 'endless-runner') setupDinoGame();
                 if (gameId === 'flappy-bird') setupFlappyBird();
@@ -1436,7 +1460,7 @@
             if (currentGame === 'flappy-bird') setupFlappyBird();
             if (currentGame === 'sudoku') generateSudoku();
             if (currentGame === 'typing-speed') startTypingTest();
-            if (currentGame === 'pong') setupPong();
+            if (currentGame === 'tower-defense') setupTowerDefense();
             if (currentGame === 'endless-runner') setupDinoGame();
             
             // Reset game state
@@ -2830,128 +2854,415 @@
             }, 200);
         });
 
-        // Simple Pong Game
-        let pongCanvas, pongCtx;
-        let pongBall, pongPlayerPaddle, pongComputerPaddle;
-        let pongPlayerScore = 0;
-        let pongComputerScore = 0;
-        let pongGameRunning = false;
+        // Tower Defense Game
+let tdCanvas, tdCtx;
+let tdMoney = 100;
+let tdLives = 20;
+let tdWave = 1;
+let tdScore = 0;
+let tdGameRunning = false;
+let selectedTowerType = 'basic';
+let sellModeActive = false;
 
-        function setupPong() {
-            pongCanvas = document.getElementById('pong-canvas');
-            if (!pongCanvas) return;
+// Game objects
+let towers = [];
+let enemies = [];
+let projectiles = [];
+let path = [];
+
+// Tower types
+const towerTypes = {
+    basic: { cost: 20, damage: 15, range: 80, fireRate: 1000, color: '#3B82F6', size: 15 },
+    heavy: { cost: 50, damage: 40, range: 70, fireRate: 1500, color: '#EF4444', size: 18 },
+    rapid: { cost: 35, damage: 8, range: 90, fireRate: 400, color: '#10B981', size: 12 }
+};
+
+// Enemy types
+const enemyTypes = {
+    basic: { hp: 30, speed: 1, reward: 10, color: '#F59E0B', size: 8 },
+    fast: { hp: 20, speed: 2, reward: 15, color: '#8B5CF6', size: 6 },
+    tank: { hp: 80, speed: 0.5, reward: 25, color: '#6B7280', size: 12 }
+};
+
+function setupTowerDefense() {
+    tdCanvas = document.getElementById('td-canvas');
+    if (!tdCanvas) return;
+    
+    tdCtx = tdCanvas.getContext('2d');
+    
+    // Create the path (simple S-curve)
+    createPath();
+    
+    // Canvas click handler
+    tdCanvas.onclick = handleTDClick;
+    tdCanvas.ontouchstart = (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const rect = tdCanvas.getBoundingClientRect();
+        const x = (touch.clientX - rect.left) * (tdCanvas.width / rect.width);
+        const y = (touch.clientY - rect.top) * (tdCanvas.height / rect.height);
+        handleTDClickAt(x, y);
+    };
+    
+    resetTowerDefense();
+}
+
+function createPath() {
+    path = [];
+    // Create a simple path from left to right with curves
+    for (let x = 0; x <= tdCanvas.width; x += 5) {
+        let y = 200 + Math.sin(x * 0.01) * 80;
+        path.push({ x, y });
+    }
+}
+
+function resetTowerDefense() {
+    tdMoney = 100;
+    tdLives = 20;
+    tdWave = 1;
+    tdScore = 0;
+    towers = [];
+    enemies = [];
+    projectiles = [];
+    tdGameRunning = false;
+    selectedTowerType = 'basic';
+    sellModeActive = false;
+    
+    updateTDDisplay();
+    drawTowerDefense();
+}
+
+function selectTowerType(type) {
+    selectedTowerType = type;
+    sellModeActive = false;
+    
+    // Update button appearance
+    document.querySelectorAll('[id*="tower-btn"]').forEach(btn => {
+        btn.classList.remove('ring-2', 'ring-white');
+    });
+    document.getElementById(type + '-tower-btn').classList.add('ring-2', 'ring-white');
+}
+
+function sellMode() {
+    sellModeActive = !sellModeActive;
+    selectedTowerType = null;
+    
+    // Update button appearance
+    document.querySelectorAll('[id*="tower-btn"]').forEach(btn => {
+        btn.classList.remove('ring-2', 'ring-white');
+    });
+}
+
+function handleTDClick(e) {
+    const rect = tdCanvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) * (tdCanvas.width / rect.width);
+    const y = (e.clientY - rect.top) * (tdCanvas.height / rect.height);
+    handleTDClickAt(x, y);
+}
+
+function handleTDClickAt(x, y) {
+    if (sellModeActive) {
+        // Try to sell a tower
+        const towerIndex = towers.findIndex(tower => {
+            const dist = Math.sqrt((x - tower.x) ** 2 + (y - tower.y) ** 2);
+            return dist <= tower.size;
+        });
+        
+        if (towerIndex !== -1) {
+            const tower = towers[towerIndex];
+            const sellPrice = Math.floor(towerTypes[tower.type].cost * 0.5);
+            tdMoney += sellPrice;
+            towers.splice(towerIndex, 1);
+            updateTDDisplay();
+            drawTowerDefense();
+        }
+        return;
+    }
+    
+    if (!selectedTowerType) return;
+    
+    // Check if click is on path
+    const onPath = path.some(point => {
+        const dist = Math.sqrt((x - point.x) ** 2 + (y - point.y) ** 2);
+        return dist <= 25;
+    });
+    
+    if (onPath) return; // Can't build on path
+    
+    // Check if click is on existing tower
+    const existingTower = towers.some(tower => {
+        const dist = Math.sqrt((x - tower.x) ** 2 + (y - tower.y) ** 2);
+        return dist <= tower.size + 10;
+    });
+    
+    if (existingTower) return; // Can't build on existing tower
+    
+    // Check if player has enough money
+    const towerCost = towerTypes[selectedTowerType].cost;
+    if (tdMoney >= towerCost) {
+        // Build tower
+        const towerData = towerTypes[selectedTowerType];
+        towers.push({
+            x: x,
+            y: y,
+            type: selectedTowerType,
+            lastShot: 0,
+            size: towerData.size,
+            ...towerData
+        });
+        
+        tdMoney -= towerCost;
+        updateTDDisplay();
+        drawTowerDefense();
+    }
+}
+
+function startTowerDefense() {
+    if (tdGameRunning) return;
+    
+    tdGameRunning = true;
+    document.getElementById('td-status').textContent = `Wave ${tdWave} starting...`;
+    
+    // Spawn enemies for current wave
+    spawnWave();
+    
+    // Start game loop
+    tdGameLoop();
+}
+
+function spawnWave() {
+    const enemiesInWave = Math.min(5 + tdWave * 2, 20);
+    let enemiesSpawned = 0;
+    
+    const spawnInterval = setInterval(() => {
+        if (enemiesSpawned >= enemiesInWave) {
+            clearInterval(spawnInterval);
+            return;
+        }
+        
+        // Choose enemy type based on wave
+        let enemyType = 'basic';
+        if (tdWave >= 3 && Math.random() < 0.3) enemyType = 'fast';
+        if (tdWave >= 5 && Math.random() < 0.2) enemyType = 'tank';
+        
+        const enemyData = enemyTypes[enemyType];
+        enemies.push({
+            x: path[0].x,
+            y: path[0].y,
+            pathIndex: 0,
+            type: enemyType,
+            hp: enemyData.hp + Math.floor(tdWave * 0.5 * enemyData.hp),
+            maxHp: enemyData.hp + Math.floor(tdWave * 0.5 * enemyData.hp),
+            speed: enemyData.speed,
+            reward: enemyData.reward,
+            color: enemyData.color,
+            size: enemyData.size
+        });
+        
+        enemiesSpawned++;
+    }, 800);
+}
+
+function tdGameLoop() {
+    if (!tdGameRunning) return;
+    
+    updateTowerDefense();
+    drawTowerDefense();
+    
+    // Check if wave is complete
+    if (enemies.length === 0 && tdGameRunning) {
+        tdWave++;
+        tdScore += tdWave * 50;
+        tdMoney += 20;
+        updateTDDisplay();
+        
+        document.getElementById('td-status').textContent = `Wave ${tdWave - 1} complete! Next wave in 3 seconds...`;
+        
+        setTimeout(() => {
+            if (tdGameRunning) {
+                spawnWave();
+            }
+        }, 3000);
+    }
+    
+    // Check game over
+    if (tdLives <= 0) {
+        tdGameRunning = false;
+        document.getElementById('td-status').textContent = `💀 Game Over! Final Score: ${tdScore}`;
+        return;
+    }
+    
+    requestAnimationFrame(tdGameLoop);
+}
+
+function updateTowerDefense() {
+    const currentTime = Date.now();
+    
+    // Update enemies
+    enemies.forEach((enemy, enemyIndex) => {
+        // Move enemy along path
+        if (enemy.pathIndex < path.length - 1) {
+            const targetPoint = path[enemy.pathIndex + 1];
+            const dx = targetPoint.x - enemy.x;
+            const dy = targetPoint.y - enemy.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
             
-            pongCtx = pongCanvas.getContext('2d');
-            initPong();
-            
-            // Touch controls
-            pongCanvas.ontouchstart = (e) => {
-                e.preventDefault();
-                const touch = e.touches[0];
-                const rect = pongCanvas.getBoundingClientRect();
-                const y = touch.clientY - rect.top;
-                
-                if (y < pongCanvas.height / 2) {
-                    pongPlayerPaddle.y = Math.max(0, pongPlayerPaddle.y - 20);
-                } else {
-                    pongPlayerPaddle.y = Math.min(260, pongPlayerPaddle.y + 20);
+            if (distance < enemy.speed) {
+                enemy.pathIndex++;
+                if (enemy.pathIndex >= path.length - 1) {
+                    // Enemy reached end
+                    tdLives--;
+                    enemies.splice(enemyIndex, 1);
+                    updateTDDisplay();
+                    return;
                 }
-            };
-        }
-
-        function initPong() {
-            pongBall = { x: 200, y: 150, dx: 3, dy: 2, radius: 8 };
-            pongPlayerPaddle = { x: 20, y: 130, width: 10, height: 40 };
-            pongComputerPaddle = { x: 370, y: 130, width: 10, height: 40 };
-            pongPlayerScore = 0;
-            pongComputerScore = 0;
-            pongGameRunning = false;
-            updatePongScore();
-            drawPong();
-        }
-
-        function startPong() {
-            if (pongGameRunning) return;
-            pongGameRunning = true;
-            pongGameLoop();
-        }
-
-        function pongGameLoop() {
-            if (!pongGameRunning) return;
-            
-            updatePong();
-            drawPong();
-            
-            requestAnimationFrame(pongGameLoop);
-        }
-
-        function updatePong() {
-            pongBall.x += pongBall.dx;
-            pongBall.y += pongBall.dy;
-            
-            if (pongBall.y <= 0 || pongBall.y >= 300) {
-                pongBall.dy = -pongBall.dy;
-            }
-            
-            if (pongBall.x <= pongPlayerPaddle.x + pongPlayerPaddle.width &&
-                pongBall.y >= pongPlayerPaddle.y &&
-                pongBall.y <= pongPlayerPaddle.y + pongPlayerPaddle.height) {
-                pongBall.dx = -pongBall.dx;
-            }
-            
-            if (pongBall.x >= pongComputerPaddle.x &&
-                pongBall.y >= pongComputerPaddle.y &&
-                pongBall.y <= pongComputerPaddle.y + pongComputerPaddle.height) {
-                pongBall.dx = -pongBall.dx;
-            }
-            
-            if (pongBall.x < 0) {
-                pongComputerScore++;
-                resetPongBall();
-                updatePongScore();
-            } else if (pongBall.x > 400) {
-                pongPlayerScore++;
-                resetPongBall();
-                updatePongScore();
-            }
-            
-            // Simple AI
-            if (pongComputerPaddle.y + 20 < pongBall.y) {
-                pongComputerPaddle.y += 2;
-            } else if (pongComputerPaddle.y + 20 > pongBall.y) {
-                pongComputerPaddle.y -= 2;
-            }
-            
-            if (pongPlayerScore >= 5 || pongComputerScore >= 5) {
-                pongGameRunning = false;
-                alert(pongPlayerScore >= 5 ? '🎉 You win!' : '🤖 Computer wins!');
+            } else {
+                enemy.x += (dx / distance) * enemy.speed;
+                enemy.y += (dy / distance) * enemy.speed;
             }
         }
-
-        function resetPongBall() {
-            pongBall.x = 200;
-            pongBall.y = 150;
-            pongBall.dx = Math.random() > 0.5 ? 3 : -3;
-            pongBall.dy = Math.random() * 4 - 2;
-        }
-
-        function drawPong() {
-            pongCtx.clearRect(0, 0, pongCanvas.width, pongCanvas.height);
+    });
+    
+    // Tower shooting
+    towers.forEach(tower => {
+        if (currentTime - tower.lastShot >= tower.fireRate) {
+            // Find closest enemy in range
+            let closestEnemy = null;
+            let closestDistance = tower.range;
             
-            pongCtx.fillStyle = '#5D5CDE';
-            pongCtx.fillRect(pongPlayerPaddle.x, pongPlayerPaddle.y, pongPlayerPaddle.width, pongPlayerPaddle.height);
-            pongCtx.fillRect(pongComputerPaddle.x, pongComputerPaddle.y, pongComputerPaddle.width, pongComputerPaddle.height);
+            enemies.forEach(enemy => {
+                const distance = Math.sqrt((tower.x - enemy.x) ** 2 + (tower.y - enemy.y) ** 2);
+                if (distance <= closestDistance) {
+                    closestEnemy = enemy;
+                    closestDistance = distance;
+                }
+            });
             
-            pongCtx.beginPath();
-            pongCtx.arc(pongBall.x, pongBall.y, pongBall.radius, 0, Math.PI * 2);
-            pongCtx.fill();
+            if (closestEnemy) {
+                // Create projectile
+                projectiles.push({
+                    x: tower.x,
+                    y: tower.y,
+                    targetX: closestEnemy.x,
+                    targetY: closestEnemy.y,
+                    damage: tower.damage,
+                    speed: 5,
+                    color: tower.color
+                });
+                
+                tower.lastShot = currentTime;
+            }
         }
-
-        function updatePongScore() {
-            document.getElementById('pong-player-score').textContent = pongPlayerScore;
-            document.getElementById('pong-computer-score').textContent = pongComputerScore;
+    });
+    
+    // Update projectiles
+    projectiles.forEach((projectile, projIndex) => {
+        const dx = projectile.targetX - projectile.x;
+        const dy = projectile.targetY - projectile.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance < projectile.speed) {
+            // Hit target area - damage nearby enemies
+            enemies.forEach((enemy, enemyIndex) => {
+                const enemyDistance = Math.sqrt((projectile.targetX - enemy.x) ** 2 + (projectile.targetY - enemy.y) ** 2);
+                if (enemyDistance <= 20) {
+                    enemy.hp -= projectile.damage;
+                    
+                    if (enemy.hp <= 0) {
+                        tdMoney += enemy.reward;
+                        tdScore += enemy.reward * 2;
+                        enemies.splice(enemyIndex, 1);
+                        updateTDDisplay();
+                    }
+                }
+            });
+            
+            projectiles.splice(projIndex, 1);
+        } else {
+            projectile.x += (dx / distance) * projectile.speed;
+            projectile.y += (dy / distance) * projectile.speed;
         }
+    });
+}
 
+function drawTowerDefense() {
+    tdCtx.clearRect(0, 0, tdCanvas.width, tdCanvas.height);
+    
+    // Draw background
+    tdCtx.fillStyle = '#90EE90';
+    tdCtx.fillRect(0, 0, tdCanvas.width, tdCanvas.height);
+    
+    // Draw path
+    tdCtx.strokeStyle = '#8B4513';
+    tdCtx.lineWidth = 50;
+    tdCtx.beginPath();
+    path.forEach((point, index) => {
+        if (index === 0) {
+            tdCtx.moveTo(point.x, point.y);
+        } else {
+            tdCtx.lineTo(point.x, point.y);
+        }
+    });
+    tdCtx.stroke();
+    
+    // Draw towers
+    towers.forEach(tower => {
+        // Tower range (when selected)
+        if (selectedTowerType === tower.type && !sellModeActive) {
+            tdCtx.strokeStyle = tower.color + '40';
+            tdCtx.lineWidth = 2;
+            tdCtx.beginPath();
+            tdCtx.arc(tower.x, tower.y, tower.range, 0, Math.PI * 2);
+            tdCtx.stroke();
+        }
+        
+        // Tower body
+        tdCtx.fillStyle = tower.color;
+        tdCtx.beginPath();
+        tdCtx.arc(tower.x, tower.y, tower.size, 0, Math.PI * 2);
+        tdCtx.fill();
+        
+        // Tower outline
+        tdCtx.strokeStyle = '#000';
+        tdCtx.lineWidth = 2;
+        tdCtx.stroke();
+    });
+    
+    // Draw enemies
+    enemies.forEach(enemy => {
+        // Enemy body
+        tdCtx.fillStyle = enemy.color;
+        tdCtx.beginPath();
+        tdCtx.arc(enemy.x, enemy.y, enemy.size, 0, Math.PI * 2);
+        tdCtx.fill();
+        
+        // Health bar
+        const barWidth = enemy.size * 2;
+        const barHeight = 4;
+        const healthPercent = enemy.hp / enemy.maxHp;
+        
+        tdCtx.fillStyle = '#FF0000';
+        tdCtx.fillRect(enemy.x - barWidth/2, enemy.y - enemy.size - 8, barWidth, barHeight);
+        
+        tdCtx.fillStyle = '#00FF00';
+        tdCtx.fillRect(enemy.x - barWidth/2, enemy.y - enemy.size - 8, barWidth * healthPercent, barHeight);
+    });
+    
+    // Draw projectiles
+    projectiles.forEach(projectile => {
+        tdCtx.fillStyle = projectile.color;
+        tdCtx.beginPath();
+        tdCtx.arc(projectile.x, projectile.y, 3, 0, Math.PI * 2);
+        tdCtx.fill();
+    });
+}
+
+function updateTDDisplay() {
+    document.getElementById('td-money').textContent = tdMoney;
+    document.getElementById('td-lives').textContent = tdLives;
+    document.getElementById('td-wave').textContent = tdWave;
+    document.getElementById('td-score').textContent = tdScore;
+}
         // Simple Dino Runner
         let dinoCanvas, dinoCtx;
         let dinoPlayer, dinoObstacles, dinoScore, dinoHighScore;
