@@ -682,6 +682,7 @@
         
         <div class="space-x-4">
             <button onclick="startTowerDefense()" class="bg-primary hover:bg-primary-dark text-white px-6 py-2 rounded-lg transition-colors">Start Wave</button>
+            <button onclick="generateNewMap()" class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg transition-colors">New Map</button>
             <button onclick="resetTowerDefense()" class="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg transition-colors">Reset Game</button>
         </div>
         <div id="td-status" class="text-xl font-semibold mt-4"></div>
@@ -2891,7 +2892,20 @@ const enemyTypes = {
     fast: { hp: 20, speed: 2, reward: 15, color: '#8B5CF6', size: 6 },
     tank: { hp: 80, speed: 0.5, reward: 25, color: '#6B7280', size: 12 }
 };
+// 8 Different Map Layouts
+const mapLayouts = {
+    1: { name: "Gentle Waves", description: "A smooth wavy path" },
+    2: { name: "Sharp Turns", description: "Quick zigzag movements" },
+    3: { name: "The Spiral", description: "Enemies spiral inward" },
+    4: { name: "Double Bend", description: "Two major direction changes" },
+    5: { name: "Mountain Pass", description: "Up and down terrain" },
+    6: { name: "The Maze", description: "Complex winding path" },
+    7: { name: "Speed Track", description: "Mostly straight with curves" },
+    8: { name: "Loop-de-Loop", description: "Figure-8 style path" }
+};
 
+let currentMapId = 1;
+        
 function setupTowerDefense() {
     tdCanvas = document.getElementById('td-canvas');
     if (!tdCanvas) return;
@@ -2914,16 +2928,174 @@ function setupTowerDefense() {
     
     resetTowerDefense();
 }
+function generateNewMap() {
+    // Only allow map change when no wave is active
+    if (waveActive || waveSpawning) {
+        document.getElementById('td-status').textContent = 'Cannot change map during active wave!';
+        return;
+    }
+    
+    // Clear current enemies and projectiles
+    enemies = [];
+    projectiles = [];
+    
+    // Generate new path
+    createPath();
+    drawTowerDefense();
+}
 
 function createPath() {
+    // Randomly select a map (1-8)
+    currentMapId = Math.floor(Math.random() * 8) + 1;
     path = [];
-    // Create a simple path from left to right with curves
+    
+    const width = tdCanvas.width;
+    const height = tdCanvas.height;
+    
+    switch(currentMapId) {
+        case 1: // Gentle Waves
+            for (let x = 0; x <= width; x += 5) {
+                let y = height/2 + Math.sin(x * 0.008) * 60;
+                path.push({ x, y });
+            }
+            break;
+            
+        case 2: // Sharp Turns (Zigzag)
+            let zigzagY = height/2;
+            let direction = 1;
+            for (let x = 0; x <= width; x += 10) {
+                if (x % 100 === 0 && x > 0) {
+                    direction *= -1;
+                }
+                zigzagY += direction * 3;
+                zigzagY = Math.max(50, Math.min(height-50, zigzagY));
+                path.push({ x, y: zigzagY });
+            }
+            break;
+            
+        case 3: // The Spiral
+            const centerX = width/2;
+            const centerY = height/2;
+            let angle = 0;
+            let radius = 120;
+            
+            // Start from outside and spiral in
+            for (let i = 0; i < 200; i++) {
+                const x = centerX + Math.cos(angle) * radius;
+                const y = centerY + Math.sin(angle) * radius;
+                path.push({ x, y });
+                angle += 0.08;
+                radius = Math.max(20, radius - 0.6);
+            }
+            break;
+            
+        case 4: // Double Bend
+            const segments = [
+                { start: 0, end: width*0.3, startY: height*0.8, endY: height*0.2 },
+                { start: width*0.3, end: width*0.7, startY: height*0.2, endY: height*0.2 },
+                { start: width*0.7, end: width, startY: height*0.2, endY: height*0.8 }
+            ];
+            
+            segments.forEach(segment => {
+                const segmentWidth = segment.end - segment.start;
+                for (let x = segment.start; x <= segment.end; x += 5) {
+                    const progress = (x - segment.start) / segmentWidth;
+                    const y = segment.startY + (segment.endY - segment.startY) * progress;
+                    path.push({ x, y });
+                }
+            });
+            break;
+            
+        case 5: // Mountain Pass (Up and Down)
+            for (let x = 0; x <= width; x += 5) {
+                let y = height/2 + Math.sin(x * 0.02) * 80 + Math.cos(x * 0.015) * 40;
+                y = Math.max(50, Math.min(height-50, y));
+                path.push({ x, y });
+            }
+            break;
+            
+        case 6: // The Maze (Complex winding)
+            const waypoints = [
+                { x: 0, y: height*0.7 },
+                { x: width*0.2, y: height*0.7 },
+                { x: width*0.2, y: height*0.3 },
+                { x: width*0.5, y: height*0.3 },
+                { x: width*0.5, y: height*0.8 },
+                { x: width*0.8, y: height*0.8 },
+                { x: width*0.8, y: height*0.2 },
+                { x: width, y: height*0.2 }
+            ];
+            
+            for (let i = 0; i < waypoints.length - 1; i++) {
+                const start = waypoints[i];
+                const end = waypoints[i + 1];
+                const steps = 20;
+                
+                for (let step = 0; step <= steps; step++) {
+                    const progress = step / steps;
+                    const x = start.x + (end.x - start.x) * progress;
+                    const y = start.y + (end.y - start.y) * progress;
+                    path.push({ x, y });
+                }
+            }
+            break;
+            
+        case 7: // Speed Track (Mostly straight)
+            for (let x = 0; x <= width; x += 5) {
+                let y = height/2;
+                // Add slight curves at specific points
+                if (x > width*0.2 && x < width*0.4) {
+                    y += Math.sin((x - width*0.2) / (width*0.2) * Math.PI) * 30;
+                }
+                if (x > width*0.6 && x < width*0.8) {
+                    y -= Math.sin((x - width*0.6) / (width*0.2) * Math.PI) * 30;
+                }
+                path.push({ x, y });
+            }
+            break;
+            
+        case 8: // Loop-de-Loop (Figure-8)
+            const loopCenterY = height/2;
+            const loopRadius = 60;
+            
+            // First half - top loop
+            for (let x = 0; x <= width/2; x += 5) {
+                const progress = (x / (width/2)) * Math.PI;
+                const y = loopCenterY - Math.sin(progress) * loopRadius;
+                path.push({ x, y });
+            }
+            
+            // Second half - bottom loop
+            for (let x = width/2; x <= width; x += 5) {
+                const progress = ((x - width/2) / (width/2)) * Math.PI;
+                const y = loopCenterY + Math.sin(progress) * loopRadius;
+                path.push({ x, y });
+            }
+            break;
+    }
+    
+    // Ensure path has enough points and is properly connected
+    if (path.length < 10) {
+        // Fallback to simple path if generation failed
+        createSimplePath();
+    }
+    
+    // Display current map info
+    updateMapDisplay();
+}
+
+function createSimplePath() {
+    path = [];
     for (let x = 0; x <= tdCanvas.width; x += 5) {
-        let y = 200 + Math.sin(x * 0.01) * 80;
-        path.push({ x, y });
+        path.push({ x, y: tdCanvas.height/2 });
     }
 }
 
+function updateMapDisplay() {
+    const mapInfo = mapLayouts[currentMapId];
+    const statusElement = document.getElementById('td-status');
+    statusElement.textContent = `Map: ${mapInfo.name} - ${mapInfo.description}`;
+}
 function resetTowerDefense() {
     tdMoney = 100;
     tdLives = 20;
@@ -2946,6 +3118,7 @@ function resetTowerDefense() {
     sellModeActive = false;
     
     updateTDDisplay();
+    updateMapDisplay();
     drawTowerDefense();
 }
 
