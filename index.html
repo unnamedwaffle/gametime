@@ -2854,7 +2854,7 @@
             }, 200);
         });
 
-        // Tower Defense Game
+        // Tower Defense Game - Fixed Version
 let tdCanvas, tdCtx;
 let tdMoney = 100;
 let tdLives = 20;
@@ -2863,6 +2863,14 @@ let tdScore = 0;
 let tdGameRunning = false;
 let selectedTowerType = 'basic';
 let sellModeActive = false;
+
+// Wave management - FIXED
+let waveActive = false;
+let waveSpawning = false;
+let enemiesToSpawn = 0;
+let enemiesSpawned = 0;
+let lastSpawnTime = 0;
+let waveCompleteTime = 0;
 
 // Game objects
 let towers = [];
@@ -2924,6 +2932,15 @@ function resetTowerDefense() {
     towers = [];
     enemies = [];
     projectiles = [];
+    
+    // Reset wave management - FIXED
+    waveActive = false;
+    waveSpawning = false;
+    enemiesToSpawn = 0;
+    enemiesSpawned = 0;
+    lastSpawnTime = 0;
+    waveCompleteTime = 0;
+    
     tdGameRunning = false;
     selectedTowerType = 'basic';
     sellModeActive = false;
@@ -3018,71 +3035,72 @@ function handleTDClickAt(x, y) {
 }
 
 function startTowerDefense() {
-    if (tdGameRunning) return;
+    // FIXED: Prevent multiple wave starts
+    if (waveActive || waveSpawning) {
+        document.getElementById('td-status').textContent = `Wave ${tdWave} already in progress...`;
+        return;
+    }
     
-    tdGameRunning = true;
-    document.getElementById('td-status').textContent = `Wave ${tdWave} starting...`;
+    if (!tdGameRunning) {
+        tdGameRunning = true;
+        tdGameLoop();
+    }
     
-    // Spawn enemies for current wave
-    spawnWave();
-    
-    // Start game loop
-    tdGameLoop();
+    startWave();
 }
 
-function spawnWave() {
-    const enemiesInWave = Math.min(5 + tdWave * 2, 20);
-    let enemiesSpawned = 0;
+// FIXED: Better wave management
+function startWave() {
+    if (waveActive || waveSpawning) return;
     
-    const spawnInterval = setInterval(() => {
-        if (enemiesSpawned >= enemiesInWave) {
-            clearInterval(spawnInterval);
-            return;
-        }
-        
-        // Choose enemy type based on wave
-        let enemyType = 'basic';
-        if (tdWave >= 3 && Math.random() < 0.3) enemyType = 'fast';
-        if (tdWave >= 5 && Math.random() < 0.2) enemyType = 'tank';
-        
-        const enemyData = enemyTypes[enemyType];
-        enemies.push({
-            x: path[0].x,
-            y: path[0].y,
-            pathIndex: 0,
-            type: enemyType,
-            hp: enemyData.hp + Math.floor(tdWave * 0.5 * enemyData.hp),
-            maxHp: enemyData.hp + Math.floor(tdWave * 0.5 * enemyData.hp),
-            speed: enemyData.speed,
-            reward: enemyData.reward,
-            color: enemyData.color,
-            size: enemyData.size
-        });
-        
-        enemiesSpawned++;
-    }, 800);
+    waveSpawning = true;
+    waveActive = true;
+    enemiesSpawned = 0;
+    enemiesToSpawn = Math.min(3 + tdWave * 2, 15); // Limit max enemies per wave
+    lastSpawnTime = Date.now();
+    
+    document.getElementById('td-status').textContent = `Wave ${tdWave}: ${enemiesToSpawn} enemies incoming!`;
+    
+    updateTDDisplay();
 }
 
 function tdGameLoop() {
     if (!tdGameRunning) return;
     
+    const currentTime = Date.now();
+    
+    // FIXED: Controlled enemy spawning
+    if (waveSpawning && enemiesSpawned < enemiesToSpawn) {
+        // Spawn one enemy every 1000ms (1 second)
+        if (currentTime - lastSpawnTime >= 1000) {
+            spawnEnemy();
+            enemiesSpawned++;
+            lastSpawnTime = currentTime;
+            
+            // Check if all enemies for this wave have been spawned
+            if (enemiesSpawned >= enemiesToSpawn) {
+                waveSpawning = false;
+                document.getElementById('td-status').textContent = `Wave ${tdWave}: ${enemies.length} enemies remaining`;
+            }
+        }
+    }
+    
+    // Update game objects
     updateTowerDefense();
     drawTowerDefense();
     
-    // Check if wave is complete
-    if (enemies.length === 0 && tdGameRunning) {
-        tdWave++;
+    // FIXED: Better wave completion logic
+    if (waveActive && !waveSpawning && enemies.length === 0) {
+        // Wave completed
+        waveActive = false;
+        waveCompleteTime = currentTime;
+        
         tdScore += tdWave * 50;
-        tdMoney += 20;
+        tdMoney += 15 + tdWave * 5;
+        tdWave++;
+        
         updateTDDisplay();
-        
-        document.getElementById('td-status').textContent = `Wave ${tdWave - 1} complete! Next wave in 3 seconds...`;
-        
-        setTimeout(() => {
-            if (tdGameRunning) {
-                spawnWave();
-            }
-        }, 3000);
+        document.getElementById('td-status').textContent = `Wave completed! Click "Start Wave" for Wave ${tdWave}`;
     }
     
     // Check game over
@@ -3095,11 +3113,39 @@ function tdGameLoop() {
     requestAnimationFrame(tdGameLoop);
 }
 
+// FIXED: Spawn single enemy function
+function spawnEnemy() {
+    // Choose enemy type based on wave
+    let enemyType = 'basic';
+    const rand = Math.random();
+    
+    if (tdWave >= 3 && rand < 0.25) enemyType = 'fast';
+    if (tdWave >= 5 && rand < 0.15) enemyType = 'tank';
+    
+    const enemyData = enemyTypes[enemyType];
+    const hpMultiplier = 1 + (tdWave - 1) * 0.3; // Gradual HP increase
+    
+    enemies.push({
+        x: path[0].x - 20, // Start slightly off-screen
+        y: path[0].y,
+        pathIndex: 0,
+        type: enemyType,
+        hp: Math.floor(enemyData.hp * hpMultiplier),
+        maxHp: Math.floor(enemyData.hp * hpMultiplier),
+        speed: enemyData.speed,
+        reward: enemyData.reward,
+        color: enemyData.color,
+        size: enemyData.size
+    });
+}
+
 function updateTowerDefense() {
     const currentTime = Date.now();
     
     // Update enemies
-    enemies.forEach((enemy, enemyIndex) => {
+    for (let i = enemies.length - 1; i >= 0; i--) {
+        const enemy = enemies[i];
+        
         // Move enemy along path
         if (enemy.pathIndex < path.length - 1) {
             const targetPoint = path[enemy.pathIndex + 1];
@@ -3107,21 +3153,21 @@ function updateTowerDefense() {
             const dy = targetPoint.y - enemy.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
             
-            if (distance < enemy.speed) {
+            if (distance < enemy.speed * 2) {
                 enemy.pathIndex++;
                 if (enemy.pathIndex >= path.length - 1) {
                     // Enemy reached end
                     tdLives--;
-                    enemies.splice(enemyIndex, 1);
+                    enemies.splice(i, 1);
                     updateTDDisplay();
-                    return;
+                    continue;
                 }
             } else {
                 enemy.x += (dx / distance) * enemy.speed;
                 enemy.y += (dy / distance) * enemy.speed;
             }
         }
-    });
+    }
     
     // Tower shooting
     towers.forEach(tower => {
@@ -3146,7 +3192,7 @@ function updateTowerDefense() {
                     targetX: closestEnemy.x,
                     targetY: closestEnemy.y,
                     damage: tower.damage,
-                    speed: 5,
+                    speed: 8,
                     color: tower.color
                 });
                 
@@ -3156,36 +3202,41 @@ function updateTowerDefense() {
     });
     
     // Update projectiles
-    projectiles.forEach((projectile, projIndex) => {
+    for (let i = projectiles.length - 1; i >= 0; i--) {
+        const projectile = projectiles[i];
         const dx = projectile.targetX - projectile.x;
         const dy = projectile.targetY - projectile.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
         
         if (distance < projectile.speed) {
             // Hit target area - damage nearby enemies
-            enemies.forEach((enemy, enemyIndex) => {
+            for (let j = enemies.length - 1; j >= 0; j--) {
+                const enemy = enemies[j];
                 const enemyDistance = Math.sqrt((projectile.targetX - enemy.x) ** 2 + (projectile.targetY - enemy.y) ** 2);
-                if (enemyDistance <= 20) {
+                if (enemyDistance <= 25) {
                     enemy.hp -= projectile.damage;
                     
                     if (enemy.hp <= 0) {
                         tdMoney += enemy.reward;
                         tdScore += enemy.reward * 2;
-                        enemies.splice(enemyIndex, 1);
+                        enemies.splice(j, 1);
                         updateTDDisplay();
                     }
+                    break; // Only hit one enemy per projectile
                 }
-            });
+            }
             
-            projectiles.splice(projIndex, 1);
+            projectiles.splice(i, 1);
         } else {
             projectile.x += (dx / distance) * projectile.speed;
             projectile.y += (dy / distance) * projectile.speed;
         }
-    });
+    }
 }
 
 function drawTowerDefense() {
+    if (!tdCtx) return;
+    
     tdCtx.clearRect(0, 0, tdCanvas.width, tdCanvas.height);
     
     // Draw background
@@ -3209,11 +3260,13 @@ function drawTowerDefense() {
     towers.forEach(tower => {
         // Tower range (when selected)
         if (selectedTowerType === tower.type && !sellModeActive) {
-            tdCtx.strokeStyle = tower.color + '40';
+            tdCtx.globalAlpha = 0.3;
+            tdCtx.strokeStyle = tower.color;
             tdCtx.lineWidth = 2;
             tdCtx.beginPath();
             tdCtx.arc(tower.x, tower.y, tower.range, 0, Math.PI * 2);
             tdCtx.stroke();
+            tdCtx.globalAlpha = 1;
         }
         
         // Tower body
@@ -3236,24 +3289,49 @@ function drawTowerDefense() {
         tdCtx.arc(enemy.x, enemy.y, enemy.size, 0, Math.PI * 2);
         tdCtx.fill();
         
+        // Enemy outline
+        tdCtx.strokeStyle = '#000';
+        tdCtx.lineWidth = 1;
+        tdCtx.stroke();
+        
         // Health bar
-        const barWidth = enemy.size * 2;
+        const barWidth = enemy.size * 2.5;
         const barHeight = 4;
         const healthPercent = enemy.hp / enemy.maxHp;
         
+        // Health bar background
         tdCtx.fillStyle = '#FF0000';
-        tdCtx.fillRect(enemy.x - barWidth/2, enemy.y - enemy.size - 8, barWidth, barHeight);
+        tdCtx.fillRect(enemy.x - barWidth/2, enemy.y - enemy.size - 12, barWidth, barHeight);
         
+        // Health bar foreground
         tdCtx.fillStyle = '#00FF00';
-        tdCtx.fillRect(enemy.x - barWidth/2, enemy.y - enemy.size - 8, barWidth * healthPercent, barHeight);
+        tdCtx.fillRect(enemy.x - barWidth/2, enemy.y - enemy.size - 12, barWidth * healthPercent, barHeight);
     });
     
     // Draw projectiles
     projectiles.forEach(projectile => {
         tdCtx.fillStyle = projectile.color;
         tdCtx.beginPath();
-        tdCtx.arc(projectile.x, projectile.y, 3, 0, Math.PI * 2);
+        tdCtx.arc(projectile.x, projectile.y, 4, 0, Math.PI * 2);
         tdCtx.fill();
+        
+        // Projectile trail
+        tdCtx.strokeStyle = projectile.color;
+        tdCtx.lineWidth = 2;
+        tdCtx.globalAlpha = 0.5;
+        tdCtx.beginPath();
+        const trailLength = 10;
+        const dx = projectile.targetX - projectile.x;
+        const dy = projectile.targetY - projectile.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance > 0) {
+            const trailX = projectile.x - (dx / distance) * trailLength;
+            const trailY = projectile.y - (dy / distance) * trailLength;
+            tdCtx.moveTo(trailX, trailY);
+            tdCtx.lineTo(projectile.x, projectile.y);
+        }
+        tdCtx.stroke();
+        tdCtx.globalAlpha = 1;
     });
 }
 
